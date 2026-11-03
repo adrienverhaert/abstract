@@ -6,7 +6,7 @@ separate compatibility values in [`release-manifest.json`](../release-manifest.j
 
 ## Pull requests
 
-The reusable CI workflow checks repository privacy, Rust formatting and Clippy,
+The reusable CI workflow checks repository privacy, Rust formatting, Clippy and dependency advisories,
 compiler tests on Linux/Windows/macOS, Rust 1.85, Java 8/21, extension unit tests,
 and actual VS Code 1.92/stable hosts. Host checks build the retained real 1.1.0
 compiler to verify capability negotiation. The packaged VSIX is checked too.
