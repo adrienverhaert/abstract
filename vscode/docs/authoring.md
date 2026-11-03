@@ -125,8 +125,9 @@ npm run package
 `npm test` includes compiler-backed byte comparisons and therefore needs the
 compiler build or `ABSTRACT_COMPILER_PATH`. Integration tests use isolated VS
 Code profiles and temporary projects. `ABSTRACT_VSCODE_PATH` can select an
-existing VS Code executable; `ABSTRACT_TEST_VSCODE_VERSION` selects a released
-test version.
+existing VS Code executable; `ABSTRACT_VSCODE_VERSION` selects the test version. The legacy
+`ABSTRACT_TEST_VSCODE_VERSION` override is also accepted by the public runner.
+CI builds the retained `compat-compiler-1.1.0` snapshot for the prior-compiler gate.
 
 Set `ABSTRACT_TEST_RESTRICTED=1` to exercise Restricted Mode. Set
 `ABSTRACT_LEGACY_COMPILER_PATH` to a preserved pre-protocol executable to test

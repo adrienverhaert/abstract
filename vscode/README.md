@@ -70,5 +70,5 @@ If you are new to the language, work through the
 feature boundaries and development commands, see the
 [extension authoring reference](docs/authoring.md).
 
-The extension is by **Adrien Verhaert** Its identifier is
+The extension is by **Adrien Verhaert**. Its identifier is
 `adrienverhaert.abstract-language`.
