@@ -230,10 +230,10 @@
     }
   },
   "devDependencies": {
-    "@vscode/test-electron": "^2.5.2",
-    "@vscode/vsce": "^3.9.1",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^4.1.0",
     "vscode-oniguruma": "^2.0.1",
-    "vscode-textmate": "^9.2.0"
+    "vscode-textmate": "^9.3.2"
   },
   "homepage": "https://github.com/adrienverhaert/abstract",
   "bugs": {
