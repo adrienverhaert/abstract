@@ -7,8 +7,8 @@ const { temporaryWorkspace } = require("./test-workspace");
 
 async function main() {
   const workspace = await temporaryWorkspace();
-  const compiler = process.env.ABSTRACT_COMPILER_PATH || path.resolve(__dirname, "../../target/release/abstract.exe");
-  const version = process.env.ABSTRACT_TEST_VSCODE_VERSION || "1.92.0";
+  const compiler = process.env.ABSTRACT_COMPILER_PATH || path.resolve(__dirname, "../../target/debug", process.platform === "win32" ? "abstract.exe" : "abstract");
+  const version = process.env.ABSTRACT_VSCODE_VERSION || process.env.ABSTRACT_TEST_VSCODE_VERSION || "1.92.0";
   const restricted = process.env.ABSTRACT_TEST_RESTRICTED === "1";
   const evidence = process.env.ABSTRACT_PUBLIC_TEST_EVIDENCE;
   const fixtures = {
