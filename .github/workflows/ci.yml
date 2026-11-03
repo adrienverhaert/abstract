@@ -58,3 +58,90 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.85
       - run: cargo test --locked
 
+
+  vscode-unit:
+    name: VS Code extension unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vscode
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: vscode/package-lock.json
+      - run: npm ci
+      - run: cargo build --locked --bin abstract
+        working-directory: .
+      - run: npm test
+
+  vscode-integration:
+    name: VS Code ${{ matrix.vscode-version }} extension host
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        vscode-version: ['1.92.0', stable]
+    defaults:
+      run:
+        working-directory: vscode
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: vscode/package-lock.json
+      - run: npm ci
+      - run: cargo build --locked --bin abstract
+        working-directory: .
+      - name: Run against the actual VS Code extension host
+        env:
+          ABSTRACT_VSCODE_VERSION: ${{ matrix.vscode-version }}
+        run: xvfb-run --auto-servernum npm run test:integration
+      - name: Check out the retained real compiler baseline
+        uses: actions/checkout@v7
+        with:
+          ref: compat-compiler-1.1.0
+          path: .compat/compiler-1.1
+          persist-credentials: false
+      - name: Build the prior compiler for capability negotiation
+        run: cargo build --locked --manifest-path .compat/compiler-1.1/Cargo.toml --target-dir .compat/compiler-1.1/target
+        working-directory: .
+      - name: Check public inventory against the actual extension host
+        env:
+          ABSTRACT_PUBLIC_OLD_COMPILER: ${{ github.workspace }}/.compat/compiler-1.1/target/debug/abstract
+          ABSTRACT_VSCODE_VERSION: ${{ matrix.vscode-version }}
+        run: xvfb-run --auto-servernum npm run test:integration:public
+
+  vscode-package:
+    name: Package VS Code extension
+    needs: [vscode-unit, vscode-integration]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vscode
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: vscode/package-lock.json
+      - run: npm ci
+      - run: npm run package
+      - uses: actions/upload-artifact@v7
+        with:
+          name: abstract-language-vsix
+          path: vscode/*.vsix
+          if-no-files-found: error
