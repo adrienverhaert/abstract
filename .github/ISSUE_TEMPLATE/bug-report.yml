@@ -1,0 +1,31 @@
+name: Bug report
+description: A reproducible compiler, editor, or runtime defect.
+title: "fix: "
+labels: [bug]
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+      description: Explain what happened and which rule or documented behavior differs.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: Include source, command or editor steps, and the exact diagnostic. Use synthetic data.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Versions and platform
+      description: Compiler, extension or runtime version, operating system, and VS Code version when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and verification
+      description: Add a minimal synthetic example, relevant output, or screenshots from a real run. Remove private data.

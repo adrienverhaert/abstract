@@ -1,0 +1,24 @@
+name: Documentation
+description: Clarify a guide, reference page, or runnable example.
+title: "docs: "
+labels: [documentation]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page or example
+      description: Link the relevant file, section, or website page.
+    validations:
+      required: true
+  - type: textarea
+    id: difficulty
+    attributes:
+      label: Reader goal and difficulty
+      description: What were you trying to learn or do, and what was unclear or incorrect?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and verification
+      description: Add a minimal synthetic example, relevant output, or screenshots from a real run. Remove private data.
