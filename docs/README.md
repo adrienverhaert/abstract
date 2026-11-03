@@ -5,6 +5,11 @@ The [language guide](language.md) explains schemas, instances, reuse, logic,
 resources, and model `versions` in a practical order. The [Authoring guide](authoring/README.md)
 is a compact authoring checklist for assisted work.
 
+## Architecture and delivery
+
+- [Architecture](architecture.md): compiler and consumer responsibilities.
+- [Contribution workflow](../CONTRIBUTING.md): issues, commits, evidence, and checks.
+
 ## Reference
 
 - [Language specification](reference/specification.md): normative syntax,
