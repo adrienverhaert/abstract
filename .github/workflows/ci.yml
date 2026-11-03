@@ -95,6 +95,7 @@ jobs:
           cache: npm
           cache-dependency-path: vscode/package-lock.json
       - run: npm ci
+      - run: npm audit --audit-level=high
       - run: cargo build --locked --bin abstract
         working-directory: .
       - run: npm test
