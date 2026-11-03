@@ -1,16 +1,22 @@
 name: CI
 on:
+  workflow_call:
   pull_request:
   push:
     branches: [main]
 permissions:
   contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   repository-hygiene:
     name: Repository privacy
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
       - run: python3 scripts/check-repository-hygiene.py --self-test
@@ -19,20 +25,23 @@ jobs:
   rust-lint:
     name: Rust format and lint
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
           components: rustfmt, clippy
       - run: cargo fmt --all -- --check
       - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: python3 scripts/check-release-manifest.py
       - run: cargo package --locked
 
   compiler:
     name: Compiler (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -41,36 +50,38 @@ jobs:
         # Linux arm64 assets on their matching hosted runners.
         os: [ubuntu-latest, windows-latest, macos-15]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
       - run: cargo test --locked
       - run: cargo build --release --locked --bin abstract
 
   rust-msrv:
     name: Rust MSRV (1.85)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@1.85
+      - uses: dtolnay/rust-toolchain@ccc8c1f930153b792217f06c65a38f23a882993a # 1.85
       - run: cargo test --locked
 
 
   vscode-unit:
     name: VS Code extension unit tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: vscode
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-node@v7
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
           cache: npm
@@ -83,6 +94,7 @@ jobs:
   vscode-integration:
     name: VS Code ${{ matrix.vscode-version }} extension host
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -91,11 +103,11 @@ jobs:
       run:
         working-directory: vscode
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-node@v7
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
           cache: npm
@@ -108,7 +120,7 @@ jobs:
           ABSTRACT_VSCODE_VERSION: ${{ matrix.vscode-version }}
         run: xvfb-run --auto-servernum npm run test:integration
       - name: Check out the retained real compiler baseline
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: compat-compiler-1.1.0
           path: .compat/compiler-1.1
@@ -126,39 +138,42 @@ jobs:
     name: Package VS Code extension
     needs: [vscode-unit, vscode-integration]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: vscode
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: vscode/package-lock.json
       - run: npm ci
       - run: npm run package
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: abstract-language-vsix
           path: vscode/*.vsix
           if-no-files-found: error
+          retention-days: 7
 
   java-runtime:
     name: Java runtime (${{ matrix.java }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         java: ['8', '21']
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-java@v5
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -168,3 +183,15 @@ jobs:
         env:
           ABSTRACT_COMPILER_PATH: ${{ github.workspace }}/target/debug/abstract
 
+
+  quality-gate:
+    name: Quality gate
+    if: always()
+    needs: [repository-hygiene, rust-lint, compiler, rust-msrv, java-runtime, vscode-unit, vscode-integration, vscode-package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Require every component check to succeed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: python3 -c 'import json, os; results = json.loads(os.environ["RESULTS"]); assert all(job["result"] == "success" for job in results.values()), results'
