@@ -145,3 +145,26 @@ jobs:
           name: abstract-language-vsix
           path: vscode/*.vsix
           if-no-files-found: error
+
+  java-runtime:
+    name: Java runtime (${{ matrix.java }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['8', '21']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+      - run: cargo build --locked --bin abstract
+      - run: mvn --batch-mode --file java/pom.xml verify
+        env:
+          ABSTRACT_COMPILER_PATH: ${{ github.workspace }}/target/debug/abstract
+
