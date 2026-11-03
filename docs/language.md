@@ -1162,7 +1162,7 @@ and is stable within its wire contract.
 - [Syntax reference](reference/syntax.md); a lookup-oriented
   reference for `.ab` and `.abt` files.
 - [Compiled data](reference/compiled-data.md); the compiled-document contract for consumers.
-- [AI authoring guide](ai/README.md); rules and examples for generating and
+- [Authoring guide](authoring/README.md); rules and examples for generating and
   validating `.ab` and `.abt` files.
 - [Feature examples](../examples/features/README.md); every example in these documents as a
   compilable project.

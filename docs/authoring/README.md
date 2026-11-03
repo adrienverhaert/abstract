@@ -1,4 +1,4 @@
-# Abstract authoring for AI assistants
+# Abstract authoring checklist
 
 Use this directory when your task is to create or edit Abstract source files:
 schemas and logic in `.abt` files, and instances in `.ab` files.

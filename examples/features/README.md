@@ -91,5 +91,5 @@ their schemas declare.
 | `overlays-multi-match` | conformance coverage for SPEC 7.5; referenced from `docs/reference/compiled-data.md` |
 | `formats` | `docs/reference/compiled-data.md`, site: `docs/raw.html` |
 | `release-policy` | site: `examples/release-policy.html` |
-| `product-options` | [AI authoring guide](../../docs/ai/README.md) |
+| `product-options` | [Authoring guide](../../docs/authoring/README.md) |
 | `readme-tour` | `README.md`, site: `index.html` |

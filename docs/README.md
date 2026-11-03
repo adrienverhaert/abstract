@@ -2,7 +2,7 @@
 
 Start with the [learning path](learn/README.md) if you are new to the language.
 The [language guide](language.md) explains schemas, instances, reuse, logic,
-resources, and model `versions` in a practical order. The [AI guide](ai/README.md)
+resources, and model `versions` in a practical order. The [Authoring guide](authoring/README.md)
 is a compact authoring checklist for assisted work.
 
 ## Reference

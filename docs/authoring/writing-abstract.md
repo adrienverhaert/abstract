@@ -1,6 +1,6 @@
 # Writing Abstract
 
-This guide helps an AI assistant author correct Abstract source. It is a
+This guide helps authors write correct Abstract source. It is a
 compact working guide; [the specification](../reference/specification.md) remains normative.
 
 ## Start from the contract
