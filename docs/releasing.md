@@ -1,62 +1,66 @@
-# Release
+# Releases and verification
 
-The compiler, extension and Java reader have independent versions. The
-[release manifest](../release-manifest.json) records the versions shipped
-with a compiler tag. CI checks those values against the source.
+The compiler, language, document protocol, extension, and Java runtime have
+separate compatibility values in [`release-manifest.json`](../release-manifest.json).
+`python scripts/check-release-manifest.py` checks those values against source.
 
-## Prepare a tag
+## Pull requests
 
-Run the checks in [CONTRIBUTING.md](../CONTRIBUTING.md), including the minimum
-Rust version, and review the [compatibility guide](compatibility.md). Merge only
-after the required CI jobs pass. Use `v<compiler version>` as the tag; the release
-workflow rejects a tag that disagrees with `Cargo.toml`.
+The reusable CI workflow checks repository privacy, Rust formatting and Clippy,
+compiler tests on Linux/Windows/macOS, Rust 1.85, Java 8/21, extension unit tests,
+and actual VS Code 1.92/stable hosts. Host checks build the retained real 1.1.0
+compiler to verify capability negotiation. The packaged VSIX is checked too.
 
-The workflow builds and tests native binaries for Windows x64, Linux x64 and
-ARM64, and macOS Intel and Apple Silicon. It tests the extension in the minimum
-supported and stable VS Code hosts, packages a VSIX, and creates a draft Adrien Verhaert
-release with checksums and the compatibility manifest. A configured job is not
-evidence that a platform passed; check the run for the release being prepared.
+`Quality gate` succeeds only when every component check succeeds. A cancelled,
+failed, or skipped component does not make the aggregate gate green. Pull
+requests should be merged through GitHub after their checks pass.
 
-## Verify the artifacts
+## Create a release
 
-1. Confirm that the tag, manifest, compiler and intended extension versions match.
-2. Check every native build, Java test and extension job for failures.
-3. Before publishing the draft, locally verify its checksums, the Windows
-   binary and the VSIX in a clean VS Code profile.
-4. Publish the draft as a private prerelease, then dispatch **Verify downloaded
-   release** with the tag. It downloads each native binary only on its matching
-   platform, checks its named SHA-256 entry, manifest and version, then runs
-   lint, compilation, bundle round-trip and tamper-rejection checks.
-5. Promote the private prerelease only after all five verification jobs pass,
-   then review installation instructions, migration steps and known limits.
-   Record any unavailable platform checks in the release notes.
+1. Update the affected component versions and compatibility notes. Keep the
+   manifest and source values consistent, and merge the change through a PR.
+2. Create a version tag matching `Cargo.toml`, such as `v1.5.0`, on that verified
+   commit. `Release` also supports a manual run when a version tag is selected.
+   Running it from a branch fails the explicit tag check.
+3. The release workflow calls the complete CI workflow first. It then tests and
+   builds native Linux x64/arm64, Windows x64, and macOS Intel/Apple-silicon
+   executables, and packages the Java library. The VSIX comes from verified CI.
+4. Before upload, each native executable must report the expected version,
+   compile the automotive fixture, and pass sealed-bundle round-trip and
+   tamper-rejection checks using `scripts/verify-release.py`.
+5. A write-scoped final job assembles the native binaries, VSIX, JAR, compatibility
+   manifest, and `SHA256SUMS.txt` into a draft GitHub release. Review that draft,
+   then publish it. All earlier jobs have read-only repository permissions.
 
-For a command-line dispatch, use the tag that is being released:
+Release concurrency is serialized per tag. Re-running a draft can replace its
+verified artifacts; a published release is not overwritten by that path.
+Third-party Actions are pinned to immutable commit hashes. CI artifacts are
+retained for seven days; the GitHub release is the durable distribution.
+
+## Verify a downloaded artifact
+
+The `Verify downloaded release` workflow downloads binaries from a selected
+release, checks their checksums and manifest, and exercises the shipped files
+on their matching native runners. Select the same release tag under **Use
+workflow from** and in the `tag` input.
+
+To verify a compiler manually:
 
 ```sh
-gh workflow run verify-release.yml --ref "$tag" -f tag="$tag"
+python scripts/verify-release.py --tag v1.5.0 --asset ./abstract-linux-x64 \
+  --checksums ./SHA256SUMS.txt --manifest ./release-manifest.json \
+  --automotive ./examples/tutorials/automotive
 ```
 
-In the Adrien Verhaert UI, select the matching tag under **Use workflow from** before
-running the workflow. Older releases retain their own workflow layout.
+The Java JAR is a regular library, not a fat JAR; its Maven dependencies remain
+required. A VSIX can be installed from a local file through VS Code. The current
+publisher identifier is `adrienverhaert.abstract-language`; users of an earlier
+publisher package must reinstall and update formatter settings explicitly.
 
-On Linux or macOS, run `sha256sum --check SHA256SUMS.txt` where available; on
-macOS the equivalent is `shasum -a 256 --check SHA256SUMS.txt`. On Windows, use
-`Get-FileHash -Algorithm SHA256 <downloaded-file>` and compare its digest with
-the corresponding entry. Checksums detect corrupted downloads; trust also
-requires obtaining the manifest and artifacts from the intended release.
+## Rollback
 
-The download-verification workflow uses only the selected artifact,
-`SHA256SUMS.txt` and the release manifest in each job. The release must be
-published as a private prerelease: a `contents: read` workflow token cannot
-download draft assets.
-
-## Distribution
-
-The repository remains private. These workflows do not publish source or
-packages to crates.io, Maven Central or the Visual Studio Marketplace.
-
-The Cargo archive includes compiler source and a package README, not the editor,
-website or full example corpus. CI rebuilds the extracted archive. Compiler
-regression and conformance tests run from the repository, which contains their
-fixtures. `cargo install --path . --locked` installs from an authorized checkout.
+Keep a prior verified release available. Reinstall its matching binary or VSIX,
+and use its compatibility manifest to check consumer support. Do not silently
+move a published tag or mix files from different release checksums. Publish a
+new version when replacing a distribution rather than mutating an existing
+public release.

@@ -1,0 +1,160 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-tag:
+    name: Validate release tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Require a version tag matching the compiler
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import os, re, pathlib
+          assert os.environ['REF_TYPE'] == 'tag', 'Run Release from a version tag.'
+          version = re.search(r'^version = "([^"]+)"', pathlib.Path('Cargo.toml').read_text(), re.M).group(1)
+          assert os.environ['REF_NAME'] == 'v' + version, 'Release tag and Cargo version differ.'
+          PY
+
+  quality:
+    name: Full component verification
+    needs: validate-tag
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  compiler:
+    name: Build and verify ${{ matrix.asset }}
+    needs: quality
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: abstract-linux-x64
+            stage: cp target/release/abstract abstract-linux-x64
+          - os: ubuntu-24.04-arm
+            asset: abstract-linux-arm64
+            stage: cp target/release/abstract abstract-linux-arm64
+          - os: windows-latest
+            asset: abstract-windows-x64.exe
+            stage: Copy-Item target\release\abstract.exe abstract-windows-x64.exe
+          - os: macos-15
+            asset: abstract-macos-arm64
+            stage: cp target/release/abstract abstract-macos-arm64
+          - os: macos-15-intel
+            asset: abstract-macos-x64
+            stage: cp target/release/abstract abstract-macos-x64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.11'
+      - run: cargo test --locked
+      - run: cargo build --release --locked --bin abstract
+      - name: Name the native artifact
+        run: ${{ matrix.stage }}
+      - name: Verify the shipped executable and bundle rejection
+        shell: bash
+        env:
+          ASSET: ${{ matrix.asset }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python - <<'PY'
+          import hashlib, os
+          from pathlib import Path
+          files = [Path(os.environ['ASSET']), Path('release-manifest.json')]
+          Path('artifact-checksums.txt').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest() + '  ' + p.name + '\n' for p in files), encoding='utf-8')
+          PY
+          python scripts/verify-release.py --tag "$RELEASE_TAG" --asset "$ASSET" --checksums artifact-checksums.txt --manifest release-manifest.json --automotive examples/tutorials/automotive
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: native-${{ matrix.asset }}
+          path: ${{ matrix.asset }}
+          if-no-files-found: error
+          retention-days: 7
+
+  java:
+    name: Build verified Java library
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: cargo build --locked --bin abstract
+      - run: mvn --batch-mode --file java/pom.xml verify
+        env:
+          ABSTRACT_COMPILER_PATH: ${{ github.workspace }}/target/debug/abstract
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: java-runtime-jar
+          path: java/target/abstract-runtime-*.jar
+          if-no-files-found: error
+          retention-days: 7
+
+  github-release:
+    name: Publish verified draft release
+    needs: [quality, compiler, java]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          path: release-assets
+          merge-multiple: true
+      - name: Include the compatibility manifest and checksums
+        shell: bash
+        run: |
+          cp release-manifest.json release-assets/release-manifest.json
+          cd release-assets
+          mapfile -d '' artifacts < <(find . -maxdepth 1 -type f -print0 | sort -z)
+          test "${#artifacts[@]}" -ge 8
+          sha256sum "${artifacts[@]}" > SHA256SUMS.txt
+      - name: Create or update the draft from verified artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+            gh release upload "$RELEASE_TAG" release-assets/* --clobber
+          else
+            gh release create "$RELEASE_TAG" release-assets/* --verify-tag --title "Abstract $RELEASE_TAG" --draft --generate-notes
+          fi
