@@ -1,0 +1,31 @@
+name: Language or protocol change
+description: Propose a syntax, diagnostic, output, or analysis-protocol contract change.
+title: "feat(language): "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: contract
+    attributes:
+      label: Current contract and proposed behavior
+      description: Link the specification section and explain the user problem.
+    validations:
+      required: true
+  - type: textarea
+    id: examples
+    attributes:
+      label: Positive and negative examples
+      description: Show accepted source, rejected source, and expected output or diagnostic.
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility and migration
+      description: Which source, consumers, component versions, or wire formats would change?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and verification
+      description: Add a minimal synthetic example, relevant output, or screenshots from a real run. Remove private data.

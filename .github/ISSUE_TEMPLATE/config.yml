@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a vulnerability privately
+    url: https://github.com/adrienverhaert/abstract/security/advisories/new
+    about: Follow the security policy; do not disclose vulnerabilities in a public issue.
+  - name: Read the documentation
+    url: https://github.com/adrienverhaert/abstract/blob/main/docs/README.md
+    about: Language contracts, examples, and learning guides.
+  - name: Contribution workflow
+    url: https://github.com/adrienverhaert/abstract/blob/main/CONTRIBUTING.md
+    about: Branches, commits, evidence, checks, and pull requests.

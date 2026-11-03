@@ -1,0 +1,24 @@
+name: Improvement
+description: A useful change to the compiler, tooling, or workflow.
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and audience
+      description: What is difficult today, for whom, and in what concrete situation?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed result and acceptance criteria
+      description: Describe observable outcomes, compatibility effects, and what remains out of scope.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and verification
+      description: Add a minimal synthetic example, relevant output, or screenshots from a real run. Remove private data.
