@@ -1,0 +1,36 @@
+[package]
+name = "abstract-lang"
+version = "1.5.0"
+edition = "2021"
+rust-version = "1.85"
+authors = ["Adrien Verhaert"]
+description = "A declarative modeling language compiler for schema-backed object families."
+license = "MIT"
+readme = "README-crate.md"
+homepage = "https://github.com/adrienverhaert/abstract"
+repository = "https://github.com/adrienverhaert/abstract"
+documentation = "https://github.com/adrienverhaert/abstract/blob/main/docs/reference/specification.md"
+keywords = ["declarative", "modeling", "schema", "compiler"]
+categories = ["development-tools", "parsing"]
+include = [
+    "/src/**",
+    "/Cargo.toml",
+    "/Cargo.lock",
+    "/LICENSE",
+    "/README-crate.md",
+]
+
+[lib]
+name = "abstract_lang"
+path = "src/lib.rs"
+
+[[bin]]
+name = "abstract"
+path = "src/main.rs"
+
+[dependencies]
+chacha20poly1305 = "0.11.0"
+getrandom = "0.4.3"
+sha2 = "0.11.0"
+
+[dev-dependencies]
