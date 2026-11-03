@@ -32,3 +32,17 @@ SKILL.md
 !.env.example
 
 /.compat/
+
+# Additional machine-local assistant integrations
+.claude-plugin/
+.codex-plugin/
+.cursor/
+.windsurf/
+.continue/
+AGENTS.*.md
+CLAUDE.*.md
+GEMINI.*.md
+.github/copilot-instructions.md
+.cursorrules
+.windsurfrules
+.clinerules
